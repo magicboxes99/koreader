@@ -11,22 +11,22 @@ local Screen = Device.screen
 local Font = {
     fontmap = {
         -- default font for menu contents
-        cfont = "noto/NotoSans-Regular.ttf",
+        cfont = "noto/NotoSansThaiUI-Regular.ttf",
         -- default font for title
         --tfont = "NimbusSanL-BoldItal.cff",
-        tfont = "noto/NotoSans-Bold.ttf",
-        smalltfont = "noto/NotoSans-Bold.ttf",
-        x_smalltfont = "noto/NotoSans-Bold.ttf",
+        tfont = "noto/NotoSansThaiUI-Bold.ttf",
+        smalltfont = "noto/NotoSansThaiUI-Bold.ttf",
+        x_smalltfont = "noto/NotoSansThaiUI-Bold.ttf",
         -- default font for footer
-        ffont = "noto/NotoSans-Regular.ttf",
-        smallffont = "noto/NotoSans-Regular.ttf",
-        largeffont = "noto/NotoSans-Regular.ttf",
+        ffont = "noto/NotoSansThaiUI-Regular.ttf",
+        smallffont = "noto/NotoSansThaiUI-Regular.ttf",
+        largeffont = "noto/NotoSansThaiUI-Regular.ttf",
 
         -- default font for reading position info
-        rifont = "noto/NotoSans-Regular.ttf",
+        rifont = "noto/NotoSansThaiUI-Regular.ttf",
 
         -- default font for pagination display
-        pgfont = "noto/NotoSans-Regular.ttf",
+        pgfont = "noto/NotoSansThaiUI-Regular.ttf",
 
         -- selectmenu: font for item shortcut
         scfont = "droid/DroidSansMono.ttf",
@@ -34,23 +34,23 @@ local Font = {
         -- help page: font for displaying keys
         hpkfont = "droid/DroidSansMono.ttf",
         -- font for displaying help messages
-        hfont = "noto/NotoSans-Regular.ttf",
+        hfont = "noto/NotoSansThaiUI-Regular.ttf",
 
         -- font for displaying input content
         -- we have to use mono here for better distance controlling
         infont = "droid/DroidSansMono.ttf",
 
         -- font for info messages
-        infofont = "noto/NotoSans-Regular.ttf",
+        infofont = "noto/NotoSansThaiUI-Regular.ttf",
 
         -- small font for info messages
-        smallinfofont = "noto/NotoSans-Regular.ttf",
+        smallinfofont = "noto/NotoSansThaiUI-Regular.ttf",
         -- small bold font for info messages
         smallinfofontbold = "noto/NotoSans-Bold.ttf",
         -- extra small font for info messages
-        x_smallinfofont = "noto/NotoSans-Regular.ttf",
+        x_smallinfofont = "noto/NotoSansThaiUI-Regular.ttf",
         -- extra extra small font for info messages
-        xx_smallinfofont = "noto/NotoSans-Regular.ttf",
+        xx_smallinfofont = "noto/NotoSansThaiUI-Regular.ttf",
     },
     sizemap = {
         cfont = 24,
