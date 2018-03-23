@@ -1,3 +1,4 @@
+local Event = require("ui/event")
 local Generic = require("device/generic/device")
 local util = require("ffi/util")
 local logger = require("logger")
@@ -41,6 +42,42 @@ function Device:init()
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
+            handleMiscEv = function(device_input, ev)
+                -- bit of a hack for passing SDL events
+                local SDL_DROPFILE = 4096
+                local SDL_WINDOWEVENT_RESIZED = 5
+                local w = 0
+                local h = 1
+
+                if ev.code == SDL_DROPFILE then
+                    local dropped_file_path = input.getDroppedFilePath()
+                    if dropped_file_path and dropped_file_path ~= "" then
+                        local ReaderUI = require("apps/reader/readerui")
+                        ReaderUI:doShowReader(dropped_file_path)
+                    end
+                elseif ev.code == w then
+                    device_input.new_w = ev.value
+                elseif ev.code == h then
+                    device_input.new_h = ev.value
+                elseif ev.code == SDL_WINDOWEVENT_RESIZED then
+                    device_input.device.screen.screen_size.w = device_input.new_w
+                    device_input.device.screen.screen_size.h = device_input.new_h
+                    device_input.device.screen.resize(device_input.device.screen, device_input.new_w, device_input.new_h)
+
+                    local new_size = device_input.device.screen:getSize()
+                    logger.dbg("Resizing screen to", new_size)
+
+                    -- try to catch as many flies as we can
+                    -- this means we can't just return one ScreenResize or SetDimensons event
+                    local UIManager = require("ui/uimanager")
+                    UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
+                    UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
+                    -- @TODO toggle this elsewhere based on ScreenResize?
+                    -- this triggers paged media like PDF and DjVu to redraw
+                    -- CreDocument doesn't need it
+                    UIManager:broadcastEvent(Event:new("RedrawCurrentPage"))
+                end
+            end,
             hasClipboardText = function()
                 return input.hasClipboardText()
             end,

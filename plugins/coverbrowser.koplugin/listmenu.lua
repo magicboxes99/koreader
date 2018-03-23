@@ -146,11 +146,6 @@ function ListMenuItem:init()
             },
         }
     end
-    if Device:hasKeys() then
-        self.active_key_events = {
-            Select = { {"Press"}, doc = "chose selected item" },
-        }
-    end
 
     -- We now build the minimal widget container that won't change after udpate()
 
@@ -160,13 +155,13 @@ function ListMenuItem:init()
     -- even with classic menu)
     self.underline_h = 1 -- smaller than default (3) to not shift our vertical aligment
     self._underline_container = UnderlineContainer:new{
-        vertical_align = "center",
+        vertical_align = "top",
+        padding = 0,
         dimen = Geom:new{
             w = self.width,
             h = self.height
         },
         linesize = self.underline_h,
-        padding = 0,
         -- widget : will be filled in self:update()
     }
     self[1] = self._underline_container
@@ -654,13 +649,11 @@ end
 -- As done in MenuItem
 function ListMenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
-    self.key_events = self.active_key_events
     return true
 end
 
 function ListMenuItem:onUnfocus()
     self._underline_container.color = Blitbuffer.COLOR_WHITE
-    self.key_events = {}
     return true
 end
 

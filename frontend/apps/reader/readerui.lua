@@ -46,6 +46,7 @@ local Screenshoter = require("ui/widget/screenshoter")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
@@ -187,7 +188,7 @@ function ReaderUI:init()
             ui = self
         })
     end
-    -- configuable controller
+    -- configurable controller
     if self.document.info.configurable then
         -- config panel controller
         self:registerModule("config", ReaderConfig:new{
@@ -467,8 +468,19 @@ function ReaderUI:doShowReader(file, provider)
     G_reader_settings:saveSetting("lastfile", file)
     local reader = ReaderUI:new{
         dimen = Screen:getSize(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
         document = document,
     }
+
+    local title = reader.document:getProps().title
+
+    if title ~= "" then
+        Screen:setWindowTitle(title)
+    else
+        local _, filename = util.splitFilePathName(file)
+        Screen:setWindowTitle(filename)
+    end
+
     UIManager:show(reader)
     _running_instance = reader
 end

@@ -171,11 +171,6 @@ function MenuItem:init()
             },
         }
     end
-    if Device:hasKeys() then
-        self.active_key_events = {
-            Select = { {"Press"}, doc = "chose selected item" },
-        }
-    end
 
     local text_mandatory_padding = 0
     local text_ellipsis_mandatory_padding = 0
@@ -203,11 +198,6 @@ function MenuItem:init()
         local my_text = self.text and ""..self.text or ""
         local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
         if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
-            if Device:hasKeyboard() then
-                self.active_key_events.ShowItemDetail = {
-                    {"Right"}, doc = "show item detail"
-                }
-            end
             local indicator = "\226\128\166 " -- an ellipsis
             local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                 indicator, true, self.bold).x
@@ -382,13 +372,11 @@ function MenuItem:onFocus(initial_focus)
     else
         self._underline_container.color = Blitbuffer.COLOR_BLACK
     end
-    self.key_events = self.active_key_events
     return true
 end
 
 function MenuItem:onUnfocus()
     self._underline_container.color = self.line_color
-    self.key_events = {}
     return true
 end
 
@@ -793,6 +781,9 @@ function Menu:init()
         self.key_events.Select = {
             {"Press"}, doc = "select current menu item"
         }
+        self.key_events.Right = {
+            {"Right"}, doc = "hold  menu item"
+        }
     end
 
 
@@ -961,6 +952,12 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
     self:updateItems()
 end
 
+function Menu:onScreenResize(dimen)
+    -- @TODO investigate: could this cause minor memory leaks?
+    self:init()
+    return false
+end
+
 function Menu:onSelectByShortCut(_, keyevent)
     for k,v in ipairs(self.item_shortcuts) do
         if k > self.perpage then
@@ -1084,6 +1081,14 @@ function Menu:onSelect()
     local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
     if item then
         self:onMenuSelect(item)
+    end
+    return true
+end
+
+function Menu:onRight()
+    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
+    if item then
+        self:onMenuHold(item)
     end
     return true
 end
