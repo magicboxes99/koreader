@@ -2,10 +2,11 @@
 An interface to get input events.
 ]]
 
+local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
 local Event = require("ui/event")
-local Key = require("device/key")
 local GestureDetector = require("device/gesturedetector")
+local Key = require("device/key")
 local TimeVal = require("ui/timeval")
 local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
@@ -19,6 +20,8 @@ local EV_SYN = 0
 local EV_KEY = 1
 local EV_ABS = 3
 local EV_MSC = 4
+-- for frontend SDL event handling
+local EV_SDL = 53 -- ASCII code for S
 
 -- key press event values (KEY.value)
 local EVENT_VALUE_KEY_PRESS = 1
@@ -93,8 +96,8 @@ local Input = {
             "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-            "Up", "Down", "Left", "Right", "Press",
-            "Back", "Enter", "Sym", "AA", "Menu", "Home", "Del",
+            "Up", "Down", "Left", "Right", "Press", "Backspace", "End",
+            "Back", "Sym", "AA", "Menu", "Home", "Del",
             "LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
         },
     },
@@ -112,6 +115,7 @@ local Input = {
     -- keyboard state:
     modifiers = {
         Alt = false,
+        Ctrl = false,
         Shift = false,
     },
 
@@ -147,7 +151,9 @@ function Input:init()
     self.event_map[10021] = "NotCharging"
 
     -- user custom event map
-    local ok, custom_event_map = pcall(dofile, "custom.event.map.lua")
+    local custom_event_map_location = string.format(
+        "%s/%s", DataStorage:getSettingsDir(), "event_map.lua")
+    local ok, custom_event_map = pcall(dofile, custom_event_map_location)
     if ok then
         for key, value in pairs(custom_event_map) do
             self.event_map[key] = value
@@ -299,9 +305,22 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
+    local FileChooser = self.file_chooser
+    if FileChooser and self:isEvKeyPress(ev)
+    and self.modifiers["Ctrl"] and keycode == "O" then
+        logger.dbg("Opening FileChooser:", FileChooser.type)
+        local file_path = FileChooser:open()
+
+        if file_path then
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:doShowReader(file_path)
+        end
+        return
+    end
+
     -- quit on Alt + F4
     -- this is also emitted by the close event in SDL
-    if self.modifiers["Alt"] and keycode == "F4" then
+    if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
         local Device = require("frontend/device")
         local UIManager = require("ui/uimanager")
 
@@ -346,6 +365,10 @@ end
 
 function Input:handleMiscEv(ev)
     -- should be handled by a misc event protocol plugin
+end
+
+function Input:handleSdlEv(ev)
+    -- overwritten by device implementation
 end
 
 --[[--
@@ -652,9 +675,9 @@ function Input:waitEvent(timeout_us)
         if DEBUG.is_on and ev then
             DEBUG:logEv(ev)
             logger.dbg(string.format(
-                "%s event => type: %d, code: %d(%s), value: %d, time: %d.%d",
+                "%s event => type: %d, code: %d(%s), value: %s, time: %d.%d",
                 ev.type == EV_KEY and "key" or "input",
-                ev.type, ev.code, self.event_map[ev.code], ev.value,
+                ev.type, ev.code, self.event_map[ev.code], tostring(ev.value),
                 ev.time.sec, ev.time.usec))
         end
         self:eventAdjustHook(ev)
@@ -666,6 +689,8 @@ function Input:waitEvent(timeout_us)
             return self:handleTouchEv(ev)
         elseif ev.type == EV_MSC then
             return self:handleMiscEv(ev)
+        elseif ev.type == EV_SDL then
+            return self:handleSdlEv(ev)
         else
             -- some other kind of event that we do not know yet
             return Event:new("GenericInput", ev)

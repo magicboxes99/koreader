@@ -464,7 +464,7 @@ local Menu = FocusManager:new{
     item_shortcuts = {
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
         "A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
-        "Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Enter",
+        "Z", "X", "C", "V", "B", "N", "M", ".", "Sym",
     },
     item_table_stack = nil,
     is_enable_shortcut = true,
@@ -844,9 +844,6 @@ function Menu:updateItems(select_number)
                     shortcut_style = "grey_square"
                 end
                 item_shortcut = self.item_shortcuts[c]
-                if item_shortcut == "Enter" then
-                    item_shortcut = "Ent"
-                end
             end
             local item_tmp = MenuItem:new{
                 show_parent = self.show_parent,
@@ -875,12 +872,9 @@ function Menu:updateItems(select_number)
         end -- if i <= self.items
     end -- for c=1, self.perpage
     if self.item_group[1] then
-        if not Device:isTouchDevice() or Device:hasKeys() then
-            -- only draw underline for nontouch device
+        if Device:hasKeys() then
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
-            -- set focus to requested menu item
-            self.item_group[select_number]:onFocus(true)
         end
         -- update page information
         self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
