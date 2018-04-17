@@ -35,16 +35,22 @@ KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
 UBUNTUTOUCH_DIR=$(PLATFORM_DIR)/ubuntu-touch
+APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
 ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
+# appimage setup
+APPIMAGETOOL=appimagetool-x86_64.AppImage
+APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+
+# set to 1 if in Docker
+DOCKER:=$(shell grep -q docker /proc/1/cgroup && echo 1)
+
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
-
-
 
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
@@ -189,9 +195,6 @@ koboupdate: all
 	# remove old package if any
 	rm -f koreader-kobo-$(MACHINE)-$(VERSION).zip
 	# Kobo launching scripts
-	mkdir -p $(INSTALL_DIR)/kobo/mnt/onboard/.kobo
-	ln -sf ../../../../../$(KOBO_DIR)/fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
-	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
 	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
@@ -208,7 +211,7 @@ koboupdate: all
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
 	cd $(INSTALL_DIR) && zip -u ../koreader-kobo-$(MACHINE)-$(VERSION).zip \
-		koreader/ota/package.index KoboRoot.tgz koreader.png README_kobo.txt
+		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
 		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
@@ -292,6 +295,37 @@ utupdate: all
 		click build koreader && \
 		mv *.click ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).click
 
+appimageupdate: all
+	# remove old package if any
+	rm -f koreader-appimage-$(MACHINE)-$(VERSION).appimage
+
+	ln -sf ../../$(APPIMAGE_DIR)/AppRun $(INSTALL_DIR)/koreader
+	ln -sf ../../$(APPIMAGE_DIR)/koreader.appdata.xml $(INSTALL_DIR)/koreader
+	ln -sf ../../$(APPIMAGE_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
+	ln -sf ../../resources/koreader.png $(INSTALL_DIR)/koreader
+	# TODO at best this is DebUbuntu specific
+	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2.so $(INSTALL_DIR)/koreader/libs
+ifeq ("$(wildcard $(APPIMAGETOOL))","")
+	# download appimagetool
+	wget "$(APPIMAGETOOL_URL)"
+	chmod a+x "$(APPIMAGETOOL)"
+endif
+ifeq ($(DOCKER), 1)
+	# remove previously extracted appimagetool, if any
+	rm -rf squashfs-root
+	./$(APPIMAGETOOL) --appimage-extract
+endif
+	cd $(INSTALL_DIR) && pwd && \
+		rm -rf tmp && mkdir -p tmp && \
+		cp -Lr koreader tmp && \
+		rm -rf tmp/koreader/ota && \
+		rm -rf tmp/koreader/resources/icons/src && \
+		rm -rf tmp/koreader/spec
+
+	# generate AppImage
+	cd $(INSTALL_DIR)/tmp && \
+		ARCH=x86_64 ../../$(if $(DOCKER),squashfs-root/AppRun,$(APPIMAGETOOL)) koreader && \
+		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
@@ -330,12 +364,18 @@ ifeq ($(TARGET), kindle)
 	make kindleupdate
 else ifeq ($(TARGET), kindle-legacy)
 	make kindleupdate
+else ifeq ($(TARGET), kindle5)
+	make kindleupdate
+else ifeq ($(TARGET), kindlepw2)
+	make kindleupdate
 else ifeq ($(TARGET), kobo)
 	make koboupdate
 else ifeq ($(TARGET), pocketbook)
 	make pbupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
+else ifeq ($(TARGET), appimage)
+	make appimageupdate
 else ifeq ($(TARGET), android)
 	make androidupdate
 endif
@@ -373,7 +413,7 @@ po:
 
 static-check:
 	@if which luacheck > /dev/null; then \
-			luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins; \
+			luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec; \
 		else \
 			echo "[!] luacheck not found. "\
 			"you can install it with 'luarocks install luacheck'"; \

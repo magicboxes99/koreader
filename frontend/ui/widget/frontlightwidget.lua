@@ -387,7 +387,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         button_max,
     }
     local checkbutton_auto_nl = CheckButton:new({
-            text = _("Automatic warmth"),
+            text = _("Auto"),
             checked = self.powerd.auto_warmth,
             callback = function()
                 if self.powerd.auto_warmth then
@@ -402,7 +402,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
 
     local text_auto_nl = TextBoxWidget:new{
         -- @TODO implement padding_right (etc.) on TextBoxWidget and remove the two-space hack
-        text = _("Maximum at:") .. "  ",
+        text = _("Max. at:") .. "  ",
         face = self.larger_font_face,
         alignment = "right",
         fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
@@ -413,9 +413,10 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         text = " " .. math.floor(self.powerd.max_warmth_hour) .. ":" ..
             self.powerd.max_warmth_hour % 1 * 6 .. "0",
         face = self.larger_font_face,
+        alignment = "center",
         fgcolor =self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
             Blitbuffer.COLOR_GREY,
-        width = self.screen_width * 0.1
+        width = self.screen_width * 0.15
     }
     local button_minus_one_hour = Button:new{
         text = "−",

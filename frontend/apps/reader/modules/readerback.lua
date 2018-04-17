@@ -3,11 +3,15 @@ local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
 local logger = require("logger")
 local util = require("util")
+local _ = require("gettext")
 
 local ReaderBack = EventListener:new{
     location_stack = {},
     -- a limit not intended to be a practical limit but just a failsafe
     max_stack = 5000,
+    -- allow for disabling back history, and having Back key
+    -- quit immediately (useful for some developers)
+    disabled = G_reader_settings:isFalse("enable_back_history"),
 }
 
 function ReaderBack:init()
@@ -47,11 +51,13 @@ end
 
 -- Scroll mode crengine
 function ReaderBack:onPosUpdate()
+    if self.disabled then return end
     self:addCurrentLocationToStack()
 end
 
 -- Paged media
 function ReaderBack:onPageUpdate()
+    if self.disabled then return end
     self:addCurrentLocationToStack()
 end
 
@@ -63,7 +69,9 @@ end
 function ReaderBack:onBack()
     local location_stack = self.location_stack
 
-    if #location_stack > 1 then
+    if self.disabled then
+        self.ui:handleEvent(Event:new("Close"))
+    elseif #location_stack > 1 then
         local saved_location = table.remove(location_stack)
 
         if saved_location then
@@ -74,7 +82,7 @@ function ReaderBack:onBack()
         end
     else
         logger.dbg("[ReaderBack] no location history, closing")
-        self.ui:handleEvent(Event:new("Close"))
+        self.ui:handleEvent(Event:new("Home"))
     end
 end
 

@@ -83,7 +83,7 @@ function NaturalLightWidget:adaptableNumber(initial, step)
     }
     input_text:unfocus()
     local button_minus = Button:new{
-        text = "-",
+        text = "−",
         margin = Size.margin.small,
         radius = 0,
         width = self.button_width,
@@ -296,7 +296,7 @@ function NaturalLightWidget:createMainContent(width, height)
         end,
     }
     local button_ok = Button:new{
-        text = "Save settings",
+        text = "Save",
         margin = Size.margin.small,
         radius = 0,
         width = self.width * 0.2,

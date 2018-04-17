@@ -98,16 +98,16 @@ read_globals = {
 exclude_files = {
     "frontend/luxl.lua",
     "plugins/newsdownloader.koplugin/lib/handler.lua",
-    "plugins/newsdownloader.koplugin/lib/LICENSE",
+    "plugins/newsdownloader.koplugin/lib/LICENSE_LuaXML",
     "plugins/newsdownloader.koplugin/lib/xml.lua",
+    "plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser",
+    "plugins/newsdownloader.koplugin/lib/dateparser.lua",
 }
 
 -- don't balk on busted stuff in spec
 files["spec/unit/*"].std = "+busted"
 files["spec/unit/*"].globals = {
     "package",
-    "assertAlmostEquals",
-    "assertNotAlmostEquals",
     "requireBackgroundRunner",
     "stopBackgroundRunner",
 }
