@@ -186,8 +186,8 @@ kindleupdate: all
 	# note that the targz file extension is intended to keep ISP from caching
 	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar -czah --no-recursion -f ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 koboupdate: all
 	# ensure that the binaries were built for ARM
@@ -195,7 +195,7 @@ koboupdate: all
 	# remove old package if any
 	rm -f koreader-kobo-$(MACHINE)-$(VERSION).zip
 	# Kobo launching scripts
-	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
+	cp $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
 	# create new package
@@ -214,8 +214,8 @@ koboupdate: all
 		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar -czah --no-recursion -f ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 pbupdate: all
 	# ensure that the binaries were built for ARM
@@ -251,8 +251,8 @@ pbupdate: all
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar czafh ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar -czah --no-recursion -f ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 utupdate: all
 	# ensure that the binaries were built for ARM
@@ -285,8 +285,8 @@ utupdate: all
 		koreader/ota/package.index
 	# make gzip update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar -czah --no-recursion -f ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 	# generate ubuntu touch click package
 	rm -rf $(INSTALL_DIR)/tmp && mkdir -p $(INSTALL_DIR)/tmp
@@ -304,7 +304,7 @@ appimageupdate: all
 	ln -sf ../../$(APPIMAGE_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
 	ln -sf ../../resources/koreader.png $(INSTALL_DIR)/koreader
 	# TODO at best this is DebUbuntu specific
-	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2.so $(INSTALL_DIR)/koreader/libs
+	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
 ifeq ("$(wildcard $(APPIMAGETOOL))","")
 	# download appimagetool
 	wget "$(APPIMAGETOOL_URL)"
@@ -349,8 +349,8 @@ androidupdate: all
 	$(ISED) '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
 	# make gzip android update for zsync OTA update
 	-cd $(INSTALL_DIR)/koreader && \
-		tar czafh ../../koreader-android-$(MACHINE)-$(VERSION).targz \
-		-T ota/package.index --no-recursion
+		tar -czah --no-recursion -f ../../koreader-android-$(MACHINE)-$(VERSION).targz \
+		-T ota/package.index
 	# make android update apk
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
@@ -363,8 +363,6 @@ update:
 ifeq ($(TARGET), kindle)
 	make kindleupdate
 else ifeq ($(TARGET), kindle-legacy)
-	make kindleupdate
-else ifeq ($(TARGET), kindle5)
 	make kindleupdate
 else ifeq ($(TARGET), kindlepw2)
 	make kindleupdate
