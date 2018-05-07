@@ -80,8 +80,8 @@ end
 -- HTML quality) in a file named as the .ifo with a .lua
 -- extension, containing for example:
 --    return function(html)
---	html = html:gsub("<hr>", "<hr/>")
---	return html
+--        html = html:gsub("<hr>", "<hr/>")
+--        return html
 --    end
 local function getDictionaryFixHtmlFunc(path)
     if lfs.attributes(path, "mode") == "file" then
@@ -439,6 +439,8 @@ local function tidyMarkup(results)
                     def = def:gsub(format_escape, "%1")
                 end
             end
+            -- convert any htmlentities (&gt;, &quot;...)
+            def = util.htmlEntitiesToUtf8(def)
             -- ignore all markup tags
             def = def:gsub("%b<>", "")
             -- strip all leading empty lines/spaces
