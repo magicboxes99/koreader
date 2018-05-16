@@ -517,7 +517,9 @@ function ReaderRolling:onGotoViewRel(diff)
             self.ui:handleEvent(Event:new("EndOfBook"))
         end
     end
-    self.xpointer = self.ui.document:getXPointer()
+    if self.ui.document ~= nil then
+        self.xpointer = self.ui.document:getXPointer()
+    end
     return true
 end
 
@@ -561,6 +563,7 @@ function ReaderRolling:updatePos()
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
+        self.view.footer:updateFooter()
     end
     UIManager:setDirty(self.view.dialog, "partial")
 end
