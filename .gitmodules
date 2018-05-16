@@ -13,5 +13,5 @@
 	shallow = true
 [submodule "resources/fonts"]
 	path = resources/fonts
-	url = https://github.com/koreader/koreader-fonts.git
+	url = https://github.com/magicboxes99/koreader-fonts.git
 	shallow = true
