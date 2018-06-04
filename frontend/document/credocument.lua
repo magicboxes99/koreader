@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local ffi = require("ffi")
+local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
@@ -20,7 +21,6 @@ local CreDocument = Document:new{
 
     _document = false,
     _loaded = false,
-    _cre_dom_version = nil,
 
     line_space_percent = 100,
     default_font = "Noto Serif",
@@ -121,9 +121,6 @@ function CreDocument:init()
         error(self._document)  -- will contain error message
     end
 
-    -- get DOM engine latest version
-    self._cre_dom_version = self._document:getIntProperty("crengine.dom.version")
-
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
 
@@ -143,7 +140,7 @@ function CreDocument:init()
 end
 
 function CreDocument:getLatestDomVersion()
-    return self._cre_dom_version
+    return cre.getLatestDomVersion()
 end
 
 function CreDocument:getOldestDomVersion()
@@ -151,7 +148,8 @@ function CreDocument:getOldestDomVersion()
 end
 
 function CreDocument:requestDomVersion(version)
-    self._document:setIntProperty("crengine.dom.version", version)
+    logger.dbg("CreDocument: requesting DOM version:", version)
+    cre.requestDomVersion(version)
 end
 
 function CreDocument:loadDocument(full_document)
@@ -208,7 +206,7 @@ function CreDocument:getCoverPageImage()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local image = RenderImage:renderImageData(data, size)
-        ffi.C.free(data) -- free the userdata we got from crengine
+        C.free(data) -- free the userdata we got from crengine
         return image
     end
 end
@@ -218,7 +216,7 @@ function CreDocument:getImageFromPosition(pos, want_frames)
     if data and size then
         logger.dbg("CreDocument: got image data from position", data, size)
         local image = RenderImage:renderImageData(data, size, want_frames)
-        ffi.C.free(data) -- free the userdata we got from crengine
+        C.free(data) -- free the userdata we got from crengine
         return image
     end
 end
@@ -587,6 +585,22 @@ function CreDocument:enableInternalHistory(toggle)
     -- keep track of position in page and restore it after resize.
     logger.dbg("CreDocument: set bookmarks highlight and internal history", toggle)
     self._document:setIntProperty("crengine.highlight.bookmarks", toggle and 2 or 0)
+end
+
+function CreDocument:isBuiltDomStale()
+    return self._document:isBuiltDomStale()
+end
+
+function CreDocument:hasCacheFile()
+    return self._document:hasCacheFile()
+end
+
+function CreDocument:invalidateCacheFile()
+    self._document:invalidateCacheFile()
+end
+
+function CreDocument:getCacheFilePath()
+    return self._document:getCacheFilePath()
 end
 
 function CreDocument:register(registry)

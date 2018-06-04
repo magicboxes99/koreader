@@ -1,8 +1,8 @@
 local Device = require("device")
 local S = require("ui/data/strings")
-local Screen = Device.screen
-
+local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
+local Screen = Device.screen
 
 -- add multiply operator to Aa dict
 local Aa = setmetatable({"Aa"}, {
@@ -14,10 +14,6 @@ local Aa = setmetatable({"Aa"}, {
         return new
     end
 })
-
-local function enable_if_equals(configurable, option, value)
-    return configurable[option] == value
-end
 
 local CreOptions = {
     prefix = 'copt',
@@ -33,6 +29,7 @@ local CreOptions = {
                 default_arg = "portrait",
                 current_func = function() return Screen:getScreenMode() end,
                 event = "ChangeScreenMode",
+                name_text_hold_callback = optionsutil.showValues,
             }
         }
     },
@@ -48,6 +45,7 @@ local CreOptions = {
                 args = {"scroll", "page"},
                 default_arg = "page",
                 event = "SetViewMode",
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "line_spacing",
@@ -65,6 +63,10 @@ local CreOptions = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
                 },
+                name_text_hold_callback = optionsutil.showValues,
+                -- used by showValues
+                name_text_suffix = "%",
+                name_text_true_values = true,
             },
             {
                 name = "page_margins",
@@ -82,6 +84,7 @@ local CreOptions = {
                     DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM,
                     DCREREADER_CONFIG_MARGIN_SIZES_LARGE,
                 },
+                name_text_hold_callback = optionsutil.showValuesMargins,
             },
         }
     },
@@ -107,6 +110,13 @@ local CreOptions = {
                 event = "ChangeSize",
                 args = {"decrease", "increase"},
                 alternate = false,
+                name_text_hold_callback = function(configurable, __, prefix)
+                    local opt = {
+                        name = "font_size",
+                        name_text = _("Font Size"),
+                    }
+                    optionsutil.showValues(configurable, opt, prefix)
+                end,
             }
         }
     },
@@ -121,6 +131,7 @@ local CreOptions = {
                 default_value = 0,
                 args = {0, 1},
                 event = "ToggleFontBolder",
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "font_gamma",
@@ -133,6 +144,7 @@ local CreOptions = {
                 args = {10, 15, 25, 30, 36, 43, 49, 56},
                 -- gamma values for these indexes are:
                 labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "font_hinting",
@@ -142,6 +154,7 @@ local CreOptions = {
                 default_value = 2,
                 args = {0, 1, 2},
                 event = "SetFontHinting",
+                name_text_hold_callback = optionsutil.showValues,
             }
         }
     },
@@ -157,6 +170,7 @@ local CreOptions = {
                 args = {0, 1},
                 default_arg = DCREREADER_PROGRESS_BAR,
                 event = "SetStatusLine",
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "embedded_css",
@@ -167,6 +181,7 @@ local CreOptions = {
                 args = {true, false},
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "embedded_fonts",
@@ -178,8 +193,9 @@ local CreOptions = {
                 default_arg = nil,
                 event = "ToggleEmbeddedFonts",
                 enabled_func = function(configurable)
-                    return enable_if_equals(configurable, "embedded_css", 1)
+                    return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
                 end,
+                name_text_hold_callback = optionsutil.showValues,
             },
         },
     },

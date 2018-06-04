@@ -263,8 +263,10 @@ function ReaderStyleTweak:updateCssText(apply)
         local tweaks = {}
         for id, enabled in pairs(self.global_tweaks) do
             -- there are only enabled tweaks in global_tweaks, but we don't
-            -- use them if they are disabled in doc_tweaks
-            if self.doc_tweaks[id] ~= false then
+            -- add them here if they appear in doc_tweaks (if enabled in
+            -- doc_tweaks, they'll be added below; if disabled, they should
+            -- not be added)
+            if self.doc_tweaks[id] == nil then
                 table.insert(tweaks, self.tweaks_by_id[id])
             end
         end
@@ -378,6 +380,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                 end,
                 enabled_func = is_enabled,
                 sub_item_table = sub_item_table,
+                separator = item.separator,
             })
         elseif item.id then -- tweak menu item
             -- Set a default priority of 0 if item doesn't have one

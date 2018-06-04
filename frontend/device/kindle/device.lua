@@ -83,56 +83,56 @@ function Kindle:setDateTime(year, month, day, hour, min, sec)
 end
 
 function Kindle:usbPlugIn()
-    if self.charging_mode == false and self.screen_saver_mode == false then
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
-        end
-    end
+    -- NOTE: We cannot support running in USBMS mode (we cannot, we live on the partition being exported!).
+    --       But since that's the default state of the Kindle system, we have to try to make nice...
+    --       To that end, we're currently SIGSTOPping volumd to inhibit the system's USBMS mode handling.
+    --       It's not perfect (f.g., if the system is setup for USBMS and not USBNet,
+    --       the frontlight will be turned off when plugged in), but it at least prevents users from completely
+    --       shooting themselves in the foot (c.f., https://github.com/koreader/koreader/issues/3220)!
+    --       On the upside, we don't have to bother waking up the WM to show us the USBMS screen :D.
+    -- NOTE: If the device is put in USBNet mode before we even start, everything's peachy, though :).
     self.charging_mode = true
 end
 
 function Kindle:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
     if self:supportsScreensaver() then
-        Screensaver:show()
-    end
-    self.powerd:beforeSuspend()
-    if self.charging_mode == false and self.screen_saver_mode == false then
-        self.screen_saver_mode = true
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
+        -- NOTE: Meaning this is not a SO device ;)
+        if self.screen_saver_mode == false then
+            Screensaver:show()
+        end
+    else
+        -- Let the native system handle screensavers on SO devices...
+        if self.screen_saver_mode == false then
+            if os.getenv("AWESOME_STOPPED") == "yes" then
+                os.execute("killall -cont awesome")
+            end
         end
     end
+    self.powerd:beforeSuspend()
+    self.screen_saver_mode = true
 end
 
 function Kindle:outofScreenSaver()
-    if self.screen_saver_mode == true and self.charging_mode == false then
-        -- On FW >= 5.7.2, put awesome to sleep again...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -stop awesome")
-        end
+    if self.screen_saver_mode == true then
         local Screensaver = require("ui/screensaver")
         if self:supportsScreensaver() then
             Screensaver:close()
+        else
+            -- Stop awesome again if need be...
+            if os.getenv("AWESOME_STOPPED") == "yes" then
+                os.execute("killall -stop awesome")
+            end
         end
         local UIManager = require("ui/uimanager")
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
-    self.screen_saver_mode = false
     self.powerd:afterResume()
+    self.screen_saver_mode = false
 end
 
 function Kindle:usbPlugOut()
-    if self.charging_mode == true and self.screen_saver_mode == false then
-        -- On FW >= 5.7.2, put awesome to sleep again...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -stop awesome")
-        end
-        local UIManager = require("ui/uimanager")
-        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
-    end
+    -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
 
     --@TODO signal filemanager for file changes  13.06 2012 (houqp)
     self.charging_mode = false
@@ -248,6 +248,10 @@ local KindleOasis2 = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
+
+    -- NOTE: Incomplete, but at least they're confirmed.
+    --batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
+    --is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
 }
 
 local KindleBasic2 = Kindle:new{
@@ -590,7 +594,8 @@ local kindle_devcode = string.sub(kindle_sn,3,4)
 local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
 
 -- NOTE: Update me when new devices come out :)
--- Also refer to https://wiki.mobileread.com/wiki/Kindle_Serial_Numbers
+--       c.f., https://wiki.mobileread.com/wiki/Kindle_Serial_Numbers for identified variants
+--       c.f., https://github.com/NiLuJe/KindleTool/blob/master/KindleTool/kindle_tool.h#L174 for all variants
 local k2_set = Set { "02", "03" }
 local dx_set = Set { "04", "05" }
 local dxg_set = Set { "09" }
@@ -605,7 +610,8 @@ local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
 local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7",
                   "0KB", "0KC", "0KD", "0KE", "0KF", "0KG", "0LK", "0LL" }
 local koa_set = Set { "0GC", "0GD", "0GR", "0GS", "0GT", "0GU" }
-local koa2_set = Set { "0P8", "0S1", "0SA" }
+local koa2_set = Set { "0LM", "0LN", "0LP", "0LQ", "0P1", "0P2", "0P6",
+                  "0P7", "0P8", "0S1", "0S2", "0S3", "0S4", "0S7", "0SA" }
 local kt3_set = Set { "0DU", "0K9", "0KA" }
 
 if k2_set[kindle_devcode] then

@@ -491,6 +491,10 @@ function ReaderUI:doShowReader(file, provider)
 
     UIManager:show(reader)
     _running_instance = reader
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
 end
 
 function ReaderUI:_getRunningInstance()
@@ -644,6 +648,19 @@ function ReaderUI:onHome()
     self:onClose()
     self:showFileManager()
     return true
+end
+
+function ReaderUI:reloadDocument(after_close_callback)
+    local file = self.document.file
+    local provider = getmetatable(self.document).__index
+    self:handleEvent(Event:new("CloseReaderMenu"))
+    self:handleEvent(Event:new("CloseConfigMenu"))
+    self:onClose()
+    if after_close_callback then
+        -- allow caller to do stuff between close an re-open
+        after_close_callback(file, provider)
+    end
+    self:showReader(file, provider)
 end
 
 return ReaderUI

@@ -27,7 +27,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local template = require("ffi/util").template
+local T = require("ffi/util").template
 
 local stats_book = {}
 
@@ -245,7 +245,7 @@ function BookStatusWidget:setStar(num)
 
     table.insert(self.stars_container, stars_group)
 
-    UIManager:setDirty(nil, "partial")
+    UIManager:setDirty(nil, "ui")
     return true
 end
 
@@ -306,7 +306,7 @@ function BookStatusWidget:genBookInfoGroup()
     )
     -- complete text
     local text_complete = TextWidget:new{
-        text = template(_("%1% Completed"),
+        text = T(_("%1% Completed"),
                         string.format("%1.f", read_percentage * 100)),
         face = self.small_font_face,
     }
@@ -527,11 +527,11 @@ function BookStatusWidget:generateSwitchGroup(width)
 end
 
 function BookStatusWidget:onConfigChoose(values, name, event, args, events, position)
-    UIManager:scheduleIn(0.05, function()
+    UIManager:tickAfterNext(function()
         if values then
             self:onChangeBookStatus(args, position)
         end
-        UIManager:setDirty("all")
+        UIManager:setDirty("all", "ui")
     end)
 end
 
@@ -542,7 +542,8 @@ end
 
 function BookStatusWidget:onClose()
     self:saveSummary()
-    UIManager:setDirty("all")
+    -- NOTE: Flash on close to avoid ghosting, since we show an image.
+    UIManager:setDirty("all", "flashpartial")
     UIManager:close(self)
     return true
 end
