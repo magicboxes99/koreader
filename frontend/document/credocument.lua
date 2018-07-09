@@ -81,7 +81,7 @@ function CreDocument:engineInit()
             if not _v:find("/urw/") then
                 local ok, err = pcall(cre.registerFont, _v)
                 if not ok then
-                    logger.err("failed to register crengine font", err)
+                    logger.err("failed to register crengine font:", err)
                 end
             end
         end
@@ -447,6 +447,26 @@ function CreDocument:setHyphRightHyphenMin(value)
     self._document:setIntProperty("crengine.hyphenation.right.hyphen.min", value or 2)
 end
 
+function CreDocument:setTrustSoftHyphens(toggle)
+    logger.dbg("CreDocument: set hyphenation trust soft hyphens", toggle and 1 or 0)
+    self._document:setIntProperty("crengine.hyphenation.trust.soft.hyphens", toggle and 1 or 0)
+end
+
+function CreDocument:setRenderDPI(value)
+    -- set DPI used for scaling css units (with 96, 1 css px = 1 screen px)
+    -- it can be different from KOReader screen DPI
+    -- it has no relation to the default fontsize (which is already
+    -- scaleBySize()'d when provided to crengine)
+    logger.dbg("CreDocument: set render dpi", value or 96)
+    self._document:setIntProperty("crengine.render.dpi", value or 96)
+end
+
+function CreDocument:setRenderScaleFontWithDPI(toggle)
+    -- wheter to scale font with DPI, or keep the current size
+    logger.dbg("CreDocument: set render scale font with dpi", toggle)
+    self._document:setIntProperty("crengine.render.scale.font.with.dpi", toggle)
+end
+
 function CreDocument:clearSelection()
     logger.dbg("clear selection")
     self._document:clearSelection()
@@ -513,6 +533,13 @@ end
 function CreDocument:setFontHinting(mode)
     logger.dbg("CreDocument: set font hinting mode", mode)
     self._document:setIntProperty("font.hinting.mode", mode)
+end
+
+-- min space condensing percent (how much we can decrease a space width to
+-- make text fit on a line) 25...100%
+function CreDocument:setSpaceCondensing(value)
+    logger.dbg("CreDocument: set space condensing", value)
+    self._document:setIntProperty("crengine.style.space.condensing.percent", value)
 end
 
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )

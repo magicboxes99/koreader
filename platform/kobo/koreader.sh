@@ -8,13 +8,32 @@ KOREADER_DIR="${0%/*}"
 cd "${KOREADER_DIR}" || exit
 
 # update to new version from OTA directory
-NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
-if [ -f "${NEWUPDATE}" ]; then
-    # TODO: any graphic indication for the updating progress?
-    ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner \
-        && mv "${NEWUPDATE}" "${INSTALLED}"
-    rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
+ko_update_check() {
+    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
+    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    if [ -f "${NEWUPDATE}" ]; then
+        # shellcheck disable=SC2016
+        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'
+        fail=$?
+        # Cleanup behind us...
+        if [ "${fail}" -eq 0 ]; then
+            mv "${NEWUPDATE}" "${INSTALLED}"
+            ./fbink -q -y -6 -pm "Update successful :)"
+            ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
+        else
+            # Huh ho...
+            ./fbink -q -y -6 -pmh "Update failed :("
+            ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
+        fi
+        rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
+    fi
+}
+# NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...
+ko_update_check
+# If an update happened, and was successful, reexec
+if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
+    # By now, we know we're in the right directory, and our script name is pretty much set in stone, so we can forgo using $0
+    exec ./koreader.sh "${@}"
 fi
 
 # load our own shared libraries if possible
@@ -106,6 +125,9 @@ fi
 
 RETURN_VALUE=85
 while [ $RETURN_VALUE -eq 85 ]; do
+    # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
+    ko_update_check
+
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
