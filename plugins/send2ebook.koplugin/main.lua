@@ -15,7 +15,9 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local Send2Ebook = WidgetContainer:new{}
+local Send2Ebook = WidgetContainer:new{
+    name = "send2ebook",
+}
 
 local initialized = false
 local wifi_enabled_before_action = true

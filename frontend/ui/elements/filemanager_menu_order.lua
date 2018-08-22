@@ -30,8 +30,12 @@ local order = {
         "navigation",
         "----------------------------",
         "language",
-        "time",
+        "device",
         -- end common settings
+    },
+    device = {
+        "time",
+        "battery",
     },
     network = {
         "network_wifi",
@@ -54,6 +58,7 @@ local order = {
         "text_editor",
         "----------------------------",
         "more_plugins",
+        "plugin_management",
         "----------------------------",
         "advanced_settings",
         "developer_options",

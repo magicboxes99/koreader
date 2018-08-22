@@ -88,7 +88,7 @@ end
 AutoFrontlight:init()
 
 local AutoFrontlightWidget = WidgetContainer:new{
-    name = "AutoFrontlight",
+    name = "autofrontlight",
 }
 
 function AutoFrontlightWidget:init()

@@ -17,7 +17,7 @@ local Screen = require("device").screen
 local T = ffiutil.template
 
 local TextEditor = WidgetContainer:new{
-    name = "text_editor",
+    name = "texteditor",
     settings_file = DataStorage:getSettingsDir() .. "/text_editor.lua",
     settings = nil, -- loaded only when needed
     -- how many to display in menu (10x3 pages minus our 3 default menu items):
@@ -378,6 +378,7 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
+        scroll_by_pan = true,
         buttons = is_lua and {{
             -- First button on first row, that will be filled with Reset|Save|Close
             {

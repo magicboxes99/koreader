@@ -48,10 +48,14 @@ local order = {
         "navigation",
         "----------------------------",
         "language",
-        "time",
+        "device",
         "----------------------------",
         "djvu_render_mode",
         "status_bar",
+    },
+    device = {
+        "time",
+        "battery",
     },
     network = {
         "network_wifi",
@@ -75,6 +79,7 @@ local order = {
         "text_editor",
         "----------------------------",
         "more_plugins",
+        "plugin_management",
     },
     more_plugins = {
         "auto_frontlight",

@@ -21,6 +21,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
+local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
@@ -337,6 +338,7 @@ function FileManager:init()
     })
     table.insert(self, ReaderDictionary:new{ ui = self })
     table.insert(self, ReaderWikipedia:new{ ui = self })
+    table.insert(self, ReaderDeviceStatus:new{ ui = self })
 
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
@@ -743,13 +745,14 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("filename"), _("Sort by filename")},
+        strcoll_mixed = {_("name mixed"), _("Sort by name – mixed files and folders")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
         modification = {_("date modified"), _("Sort by date modified")},
         size = {_("size"), _("Sort by size")},
         type = {_("type"), _("Sort by type")},
-        percent_unopened_first = {_("percent - unopened first"), _("Sort by percent - unopened first")},
-        percent_unopened_last = {_("percent - unopened last"), _("Sort by percent - unopened last")},
+        percent_unopened_first = {_("percent – unopened first"), _("Sort by percent – unopened first")},
+        percent_unopened_last = {_("percent – unopened last"), _("Sort by percent – unopened last")},
     }
     local set_collate_table = function(collate)
         return {
@@ -760,6 +763,14 @@ function FileManager:getSortingMenuTable()
             callback = function() fm:setCollate(collate) end,
         }
     end
+    local get_collate_percent = function()
+        local collate_type = G_reader_settings:readSetting("collate")
+        if collate_type == "percent_unopened_first" or collate_type == "percent_unopened_last" then
+            return collates[collate_type][2]
+        else
+            return _("Sort by percent")
+        end
+    end
     return {
         text_func = function()
             return util.template(
@@ -769,13 +780,23 @@ function FileManager:getSortingMenuTable()
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
+            set_collate_table("strcoll_mixed"),
             set_collate_table("access"),
             set_collate_table("change"),
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
-            set_collate_table("percent_unopened_first"),
-            set_collate_table("percent_unopened_last"),
+            {
+                text_func =  get_collate_percent,
+                checked_func = function()
+                    return fm.file_chooser.collate == "percent_unopened_first"
+                        or fm.file_chooser.collate == "percent_unopened_last"
+                end,
+                sub_item_table = {
+                    set_collate_table("percent_unopened_first"),
+                    set_collate_table("percent_unopened_last"),
+                }
+            },
         }
     }
 end
