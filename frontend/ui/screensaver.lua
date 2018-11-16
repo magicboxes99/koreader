@@ -15,6 +15,14 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local screensaver_provider = {
+    ["jpg"] = true,
+    ["jpeg"] = true,
+    ["png"] = true,
+    ["gif"] = true,
+    ["tif"] = true,
+    ["tiff"] = true,
+}
 local default_screensaver_message = _("Sleeping")
 local Screensaver = {}
 
@@ -29,11 +37,8 @@ local function getRandomImage(dir)
     if ok then
         for entry in iter, dir_obj do
             if lfs.attributes(dir .. entry, "mode") == "file" then
-                local extension =
-                    string.lower(string.match(entry, ".+%.([^.]+)") or "")
-                if extension == "jpg"
-                or extension == "jpeg"
-                or extension == "png" then
+                local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
+                if screensaver_provider[extension] then
                     i = i + 1
                     pics[i] = entry
                 end
@@ -52,11 +57,10 @@ function Screensaver:chooseFolder()
     local buttons = {}
     table.insert(buttons, {
         {
-            text = _("Choose screensaver directory by long-pressing"),
+            text = _("Choose screensaver directory"),
             callback = function()
                 UIManager:close(self.choose_dialog)
                 require("ui/downloadmgr"):new{
-                    title = _("Choose screensaver directory"),
                     onConfirm = function(path)
                         logger.dbg("set screensaver directory to", path)
                         G_reader_settings:saveSetting("screensaver_dir", path)
@@ -114,7 +118,7 @@ function Screensaver:chooseFile()
                     file_filter = function(filename)
                         local util = require("util")
                         local suffix = util.getFileNameSuffix(filename)
-                        if suffix == "jpeg" or suffix == "jpg" or suffix == "png" then
+                        if screensaver_provider[suffix] then
                             return true
                         end
                     end,

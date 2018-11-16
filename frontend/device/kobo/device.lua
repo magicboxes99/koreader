@@ -24,6 +24,7 @@ local Kobo = Generic:new{
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
     hasBGRFrameBuffer = yes, -- True when >16bpp
+    hasOTAUpdates = yes,
 
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
@@ -35,7 +36,6 @@ local Kobo = Generic:new{
     internal_storage_mount_point = "/mnt/onboard/",
     -- currently only Aura One has coloured frontlight
     hasNaturalLight = no,
-    frontlight_settings = {},
 }
 
 -- TODO: hasKeys for some devices?
@@ -68,6 +68,11 @@ local KoboDaylight = Kobo:new{
     touch_phoenix_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_led1b",
+        frontlight_red = "/sys/class/backlight/lm3630a_led1a",
+        frontlight_green = "/sys/class/backlight/lm3630a_ledb",
+    },
 }
 
 -- Kobo Aura H2O:
@@ -135,7 +140,6 @@ local KoboSnowRev2 = Kobo:new{
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
         frontlight_red = "/sys/class/backlight/lm3630a_leda",
-        frontlight_green = "/dev/null",
     },
 }
 
@@ -191,9 +195,28 @@ local KoboNova = Kobo:new{
         -- NOTE: There doesn't appear to be a dedicated "green" LED, instead,
         --       there's a knob that mixes the white & red ones together (/sys/class/backlight/lm3630a_led).
         --       c.f., https://www.mobileread.com/forums/showpost.php?p=3728236&postcount=2947
-        --       Because I'm not familiar with sysfs_light.lua, just throw green into the void, and hope for the best...
-        frontlight_green = "/dev/null",
     },
+}
+
+-- Kobo Forma:
+-- FIXME: Will need initial rotation trickery like the Kindle Oasis, startup HW rota available via self.screen.fb_rota
+--        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
+--        (That's Portrait with the buttons on the right).
+--        c.f., #4291
+-- FIXME: FrontLight/NaturalLight is untested
+-- FIXME: touch_probe_ev_epoch_time is possibly unneeded
+local KoboFrost = Kobo:new{
+    model = "Kobo_frost",
+    hasFrontlight = yes,
+    hasKeys = yes,
+    touch_probe_ev_epoch_time = true,
+    touch_snow_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0",
+        frontlight_red = "/sys/class/backlight/tlc5947_bl",
+    }
 }
 
 function Kobo:init()
@@ -218,6 +241,8 @@ function Kobo:init()
             [90] = "LightButton",
             [102] = "Home",
             [116] = "Power",
+            [193] = "RPgBack",
+            [194] = "RPgFwd",
         },
         event_map_adapter = {
             SleepCover = function(ev)
@@ -671,6 +696,8 @@ elseif codename == "snow" then
     return KoboSnow
 elseif codename == "nova" then
     return KoboNova
+elseif codename == "frost" then
+    return KoboFrost
 else
     error("unrecognized Kobo model "..codename)
 end

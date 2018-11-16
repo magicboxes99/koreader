@@ -11,13 +11,13 @@ local order = {
     navi = {
         "table_of_contents",
         "bookmarks",
+        "toggle_bookmark",
         "bookmark_browsing_mode",
         "----------------------------",
         "go_to",
         "skim_to",
         "----------------------------",
         "go_to_previous_location",
-        "follow_links",
     },
     typeset = {
         "set_render_style",
@@ -44,8 +44,10 @@ local order = {
         "network",
         "screen",
         "screensaver",
+        "----------------------------",
         "document",
         "navigation",
+        "follow_links",
         "----------------------------",
         "language",
         "device",
@@ -56,6 +58,7 @@ local order = {
     device = {
         "time",
         "battery",
+        "gesture",
     },
     network = {
         "network_wifi",
@@ -73,6 +76,7 @@ local order = {
         "evernote",
         "statistics",
         "progress_sync",
+        "wallabag",
         "zsync",
         "news_downloader",
         "send2ebook",
@@ -112,8 +116,7 @@ local order = {
         "----------------------------",
         "system_statistics",
         "----------------------------",
-        "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
-                           Device:isPocketBook() or Device:isAndroid() ]]--
+        "ota_update", -- if Device:hasOTAUpdates()
         "version",
         "help",
         "----------------------------",

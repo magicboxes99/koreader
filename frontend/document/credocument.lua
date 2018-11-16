@@ -274,10 +274,10 @@ function CreDocument:getTextFromPositions(pos0, pos1)
     end
 end
 
-function CreDocument:getScreenBoxesFromPositions(pos0, pos1)
+function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     local line_boxes = {}
     if pos0 and pos1 then
-        local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1)
+        local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1, get_segments)
         for i = 1, #word_boxes do
             local line_box = word_boxes[i]
             table.insert(line_boxes, Geom:new{
@@ -303,6 +303,10 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         -- But it is all fine if we use TYPE_BBRGB16.
         self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB16 or nil)
     end
+    -- TODO: self.buffer could be re-used when no page/layout/highlights
+    -- change has been made, to avoid having crengine redraw the exact
+    -- same buffer.
+    -- And it could only change when some other methods from here are called
     self._document:drawCurrentPage(self.buffer, self.render_color)
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
@@ -324,6 +328,14 @@ function CreDocument:drawPage(target, x, y, rect, pageno, zoom, rotation)
 end
 
 function CreDocument:renderPage(pageno, rect, zoom, rotation)
+end
+
+function CreDocument:getPageMargins()
+    return self._document:getPageMargins()
+end
+
+function CreDocument:getHeaderHeight()
+    return self._document:getHeaderHeight()
 end
 
 function CreDocument:gotoXPointer(xpointer)
@@ -355,12 +367,45 @@ function CreDocument:getCurrentPos()
     return self._document:getCurrentPos()
 end
 
-function CreDocument:getPageLinks()
-    return self._document:getPageLinks()
+function CreDocument:getPageLinks(internal_links_only)
+    return self._document:getPageLinks(internal_links_only)
 end
 
 function CreDocument:getLinkFromPosition(pos)
     return self._document:getLinkFromPosition(pos.x, pos.y)
+end
+
+function CreDocument:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
+    return self._document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
+end
+
+function CreDocument:highlightXPointer(xp)
+    -- with xp=nil, clears previous highlight(s)
+    return self._document:highlightXPointer(xp)
+end
+
+function CreDocument:getDocumentFileContent(filepath)
+    if filepath then
+        return self._document:getDocumentFileContent(filepath)
+    end
+end
+
+function CreDocument:getTextFromXPointer(xp)
+    if xp then
+        return self._document:getTextFromXPointer(xp)
+    end
+end
+
+function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
+    if xp then
+        return self._document:getHTMLFromXPointer(xp, flags, from_final_parent)
+    end
+end
+
+function CreDocument:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
+    if xp0 and xp1 then
+        return self._document:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
+    end
 end
 
 function CreDocument:gotoPos(pos)

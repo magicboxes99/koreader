@@ -51,6 +51,7 @@ local Kindle = Generic:new{
     isKindle = yes,
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
     isSpecialOffers = isSpecialOffers(),
+    hasOTAUpdates = yes,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -130,6 +131,8 @@ function Kindle:outofScreenSaver()
             end
         end
         local UIManager = require("ui/uimanager")
+        -- NOTE: If we *really* wanted to avoid the framework seeping through, we could use tickAfterNext instead,
+        --       at the cost of an extra flashing update...
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
@@ -260,6 +263,14 @@ local KindleBasic2 = Kindle:new{
     model = "KindleBasic2",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event0",
+}
+
+local KindlePaperWhite4 = Kindle:new{
+    model = "KindlePaperWhite4",
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/event2",
 }
 
 function Kindle2:init()
@@ -622,6 +633,22 @@ function KindleBasic2:init()
     self.input.open("fake_events")
 end
 
+-- NOTE: FrontLight might be wrong, TBC!
+function KindlePaperWhite4:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    self.input.open("fake_events")
+end
+
 function KindleTouch:exit()
     Generic.exit(self)
     if self.isSpecialOffers then
@@ -647,6 +674,7 @@ KindlePaperWhite3.exit = KindleTouch.exit
 KindleOasis.exit = KindleTouch.exit
 KindleOasis2.exit = KindleTouch.exit
 KindleBasic2.exit = KindleTouch.exit
+KindlePaperWhite4.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -694,6 +722,8 @@ local koa_set = Set { "0GC", "0GD", "0GR", "0GS", "0GT", "0GU" }
 local koa2_set = Set { "0LM", "0LN", "0LP", "0LQ", "0P1", "0P2", "0P6",
                   "0P7", "0P8", "0S1", "0S2", "0S3", "0S4", "0S7", "0SA" }
 local kt3_set = Set { "0DU", "0K9", "0KA" }
+local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
+                  "0T7", "0TJ", "0TK", "0TL", "0TM", "0TN"}
 
 if k2_set[kindle_devcode] then
     return Kindle2
@@ -723,6 +753,8 @@ elseif koa2_set[kindle_devcode_v2] then
     return KindleOasis2
 elseif kt3_set[kindle_devcode_v2] then
     return KindleBasic2
+elseif pw4_set[kindle_devcode_v2] then
+    return KindlePaperWhite4
 end
 
 error("unknown Kindle model "..kindle_devcode.." ("..kindle_devcode_v2..")")

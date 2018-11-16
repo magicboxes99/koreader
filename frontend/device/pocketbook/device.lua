@@ -54,6 +54,7 @@ local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
     isInBackGround = false,
+    hasOTAUpdates = yes,
 }
 
 function PocketBook:init()
@@ -105,6 +106,12 @@ function PocketBook:init()
                 require("ui/event"):new("Close"))
         end
     end)
+
+    -- fix rotation for Color Lux device
+    if PocketBook:getDeviceModel() == "PocketBook Color Lux" then
+        self.screen.blitbuffer_rotation_mode = 0
+        self.screen.native_rotation_mode = 0
+    end
 
     os.remove(self.emu_events_dev)
     os.execute("mkfifo " .. self.emu_events_dev)
@@ -203,6 +210,17 @@ local PocketBook740 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
+-- PocketBook Color Lux
+local PocketBookColorLux = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    hasColorScreen = yes,
+    has3BytesWideFrameBuffer = yes,
+    isAlwaysPortrait = no,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
@@ -219,6 +237,8 @@ elseif codename == "PocketBook 623" then
     return PocketBook623
 elseif codename == "PB740" then
     return PocketBook740
+elseif codename == "PocketBook Color Lux" then
+    return PocketBookColorLux
 else
     error("unrecognized PocketBook model " .. codename)
 end

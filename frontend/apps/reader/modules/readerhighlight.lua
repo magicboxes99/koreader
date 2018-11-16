@@ -8,6 +8,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -192,6 +193,10 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
 end
 
 function ReaderHighlight:onTapXPointerSavedHighlight(ges)
+    -- Getting screen boxes is done for each tap on screen (changing pages,
+    -- showing menu...). We might want to cache these boxes per page (and
+    -- clear that cache when page layout change or highlights are added
+    -- or removed).
     local cur_page
     -- In scroll mode, we'll need to check for highlights in previous or next
     -- page too as some parts of them may be displayed
@@ -218,7 +223,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
                 -- (A highlight starting on cur_page-17 and ending on cur_page+13 is
                 -- a highlight to consider)
                 if start_page <= cur_page + neighbour_pages and end_page >= cur_page - neighbour_pages then
-                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                     if boxes then
                         for index, box in pairs(boxes) do
                             if inside_box(pos, box) then
@@ -376,6 +381,109 @@ function ReaderHighlight:lookup(selected_word, selected_link)
     end
 end
 
+function ReaderHighlight:viewSelectionHTML(debug_view)
+    if self.ui.document.info.has_pages then
+        return
+    end
+    if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
+        -- For available flags, see the "#define WRITENODEEX_*" in crengine/src/lvtinydom.cpp
+        local html_flags = 0x3030 -- valid and classic displayed HTML, with only block nodes indented
+        if debug_view then
+            -- Each node on a line, with markers and numbers of skipped chars and siblings shown,
+            -- with possibly invalid HTML (text nodes not escaped)
+            html_flags = 0x3353
+        end
+        local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
+                                    self.selected_text.pos1, html_flags, true)
+        if html then
+            -- Make some invisible chars visible
+            if debug_view then
+                html = html:gsub("\xC2\xA0", "␣")  -- no break space: open box
+                html = html:gsub("\xC2\xAD", "⋅") -- soft hyphen: dot operator (smaller than middle dot ·)
+            end
+            local TextViewer = require("ui/widget/textviewer")
+            local Font = require("ui/font")
+            local textviewer
+            local buttons_table = {}
+            if css_files then
+                for i=1, #css_files do
+                    local button = {
+                        text = T(_("View %1"), css_files[i]),
+                        callback = function()
+                            local css_text = self.ui.document:getDocumentFileContent(css_files[i])
+                            local cssviewer
+                            cssviewer = TextViewer:new{
+                                title = css_files[i],
+                                text = css_text or _("Failed getting CSS content"),
+                                text_face = Font:getFace("smallinfont"),
+                                justified = false,
+                                buttons_table = {
+                                    {{
+                                        text = _("Prettify"),
+                                        enabled = css_text and true or false,
+                                        callback = function()
+                                            UIManager:close(cssviewer)
+                                            -- This is not perfect, but enough to make
+                                            -- some ugly CSS readable
+                                            css_text = css_text:gsub("%s*{%s*", " {\n    ")
+                                            css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
+                                            css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
+                                            css_text = css_text:gsub("%s*}%s*", "\n}\n")
+                                            css_text = css_text:gsub("%s*,%s*", " ,\n")
+                                            -- The last one is wrong inside {}, eg. with
+                                            -- "font-family: Georgia, serif"
+                                            UIManager:show(TextViewer:new{
+                                                title = css_files[i],
+                                                text = css_text,
+                                                text_face = Font:getFace("smallinfont"),
+                                                justified = false,
+                                            })
+                                        end,
+                                    }},
+                                    {{
+                                        text = _("Close"),
+                                        callback = function()
+                                            UIManager:close(cssviewer)
+                                        end,
+                                    }},
+                                }
+                            }
+                            UIManager:show(cssviewer)
+                        end,
+                    }
+                    -- One button per row, too make room for the possibly long css filename
+                    table.insert(buttons_table, {button})
+                end
+            end
+            table.insert(buttons_table, {{
+                text = debug_view and _("Switch to standard view") or _("Switch to debug view"),
+                callback = function()
+                    UIManager:close(textviewer)
+                    self:viewSelectionHTML(not debug_view)
+                end,
+            }})
+            table.insert(buttons_table, {{
+                text = _("Close"),
+                callback = function()
+                    UIManager:close(textviewer)
+                end,
+            }})
+            textviewer = TextViewer:new{
+                title = _("Selection HTML"),
+                text = html,
+                text_face = Font:getFace("smallinfont"),
+                justified = false,
+                buttons_table = buttons_table,
+            }
+            UIManager:show(textviewer)
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("Failed getting HTML for selection"),
+            })
+        end
+    end
+end
+
 function ReaderHighlight:translate(selected_text)
     if selected_text.text ~= "" then
         self.ui:handleEvent(Event:new("TranslateText", self, selected_text.text))
@@ -435,6 +543,14 @@ function ReaderHighlight:onHoldRelease()
                         end,
                     },
                     {
+                        text = _("View HTML"),
+                        enabled = not self.ui.document.info.has_pages,
+                        callback = function()
+                            self:viewSelectionHTML()
+                        end,
+                    },
+                    --[[
+                    {
                         text = _("Translate"),
                         enabled = false,
                         callback = function()
@@ -442,6 +558,7 @@ function ReaderHighlight:onHoldRelease()
                             self:onClose()
                         end,
                     },
+                    --]]
                 },
                 {
                     {

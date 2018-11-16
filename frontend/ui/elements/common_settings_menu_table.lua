@@ -109,20 +109,18 @@ common_settings.screen = {
     text = _("Screen"),
     sub_item_table = {
         require("ui/elements/screen_dpi_menu_table"),
-        require("ui/elements/refresh_menu_table"),
         require("ui/elements/screen_eink_opt_menu_table"),
         require("ui/elements/menu_activate"),
         require("ui/elements/screen_disable_double_tap_table"),
         require("ui/elements/flash_ui"),
         require("ui/elements/flash_keyboard"),
-        require("ui/elements/avoid_flashing_ui"),
     },
 }
 if Screen.isColorScreen() then
-    table.insert(common_settings.screen.sub_item_table, 4, require("ui/elements/screen_color_menu_table"))
-    common_settings.screen.sub_item_table[4].separator = true
-else
+    table.insert(common_settings.screen.sub_item_table, 3, require("ui/elements/screen_color_menu_table"))
     common_settings.screen.sub_item_table[3].separator = true
+else
+    common_settings.screen.sub_item_table[2].separator = true
 end
 if Device:isAndroid() then
     table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
@@ -163,6 +161,31 @@ if Device:hasKeys() then
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("back_to_exit", "disable")
+                        end,
+                    },
+                },
+            },
+            {
+                text = _("Back key in file browser"),
+                sub_item_table = {
+                    {
+                        text = _("Default"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("back_in_filemanager")
+                                       == "default"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_in_filemanager", "default")
+                        end,
+                    },
+                    {
+                        text = _("Go to parent folder"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("back_in_filemanager")
+                                       == "parent_folder"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_in_filemanager", "parent_folder")
                         end,
                     },
                 },

@@ -695,9 +695,12 @@ function Menu:init()
     -- return button
     self.page_return_arrow = Button:new{
         icon = "resources/icons/appbar.arrow.left.up.png",
-        callback = function() self:onReturn() end,
+        callback = function()
+            if self.onReturn then self:onReturn() end
+        end,
         bordersize = 0,
         show_parent = self,
+        readonly = self.return_arrow_propagation,
     }
     self.page_return_arrow:hide()
     self.return_button = HorizontalGroup:new{
@@ -1176,9 +1179,25 @@ function Menu:onSwipe(arg, ges_ev)
         self:onNextPage()
     elseif ges_ev.direction == "east" then
         self:onPrevPage()
-    else
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+    elseif ges_ev.direction == "south" then
+        if self.has_close_button and not self.no_title then
+            -- If there is a close button displayed (so, this Menu can be
+            -- closed), allow easier closing with swipe up/down
+            self:onClose()
+        end
+        -- If there is no close button, it's a top level Menu and swipe
+        -- up/down may hide/show top menu
+    elseif ges_ev.direction == "north" then
+        -- no use for now
+        do end -- luacheck: ignore 541
+    else -- diagonal swipe
+        if G_reader_settings:readSetting("gesture_fm") and G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
+            -- managed by gesture manager
+            do end -- luacheck: ignore 541
+        else
+            -- trigger full refresh
+            UIManager:setDirty(nil, "full")
+        end
     end
 end
 

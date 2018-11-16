@@ -32,11 +32,12 @@ local Device = {
     -- and have device dependent implementations in the corresponting
     -- device/<devicetype>/device.lua file
     -- (these are functions!)
+    isAndroid = no,
+    isCervantes = no,
     isKindle = no,
     isKobo = no,
     isPocketBook = no,
     isSonyPRSTUX = no,
-    isAndroid = no,
     isSDL = no,
 
     -- some devices have part of their screen covered by the bezel
@@ -46,6 +47,14 @@ local Device = {
     isAlwaysPortrait = no,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
+
+    -- set to yes on devices whose framebuffer reports 8bit per pixel,
+    -- but is actually a color eInk screen with 24bit per pixel.
+    -- The refresh is still based on bytes. (This solves issue #4193.)
+    has3BytesWideFrameBuffer = no,
+
+    -- set to yes on devices that support over-the-air incremental updates.
+    hasOTAUpdates = no,
 }
 
 function Device:new(o)
@@ -69,8 +78,8 @@ function Device:init()
 
     self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
-    local is_eink = G_reader_settings:readSetting("eink")
-    self.screen.eink = (is_eink == nil) or is_eink
+    local low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
+    self.screen.low_pan_rate = (low_pan_rate == nil) or low_pan_rate
 
     logger.info("initializing for device", self.model)
     logger.info("framebuffer resolution:", self.screen:getSize())

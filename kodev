@@ -2,7 +2,10 @@
 
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(git describe HEAD)
-VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+# Only append date if we're not on a whole version, like v2018.11
+if echo "${VERSION}" | grep -; then
+    VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+fi
 
 # Default Android build to arm.
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
@@ -21,7 +24,7 @@ export NDKABI
 
 function assert_ret_zero() {
     if [ "${1}" -ne 0 ]; then
-        if [ ! -z "${2}" ]; then
+        if [ -n "${2}" ]; then
             echo "${2}"
         fi
         exit 1
@@ -113,6 +116,7 @@ SUPPORTED_TARGETS="
     kindlepw2       With compiler optimizations for Kindle models >= Paperwhite 2
     kindle-legacy   Needed only for Kindle2/3/DXG
     kobo
+    cervantes
     sony-prstux
     android
     pocketbook
@@ -165,6 +169,10 @@ ${SUPPORTED_TARGETS}"
 
     check_submodules
     case "${1}" in
+        cervantes)
+            make TARGET=cervantes
+            assert_ret_zero $?
+            ;;
         kindle)
             make TARGET=kindle
             assert_ret_zero $?
@@ -243,10 +251,34 @@ usage: clean <TARGET>
 TARGET:
 ${SUPPORTED_TARGETS}"
 
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            --debug)
+                export KODEBUG=1
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${BUILD_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift 1
+    done
+
     case "${1}" in
         -h | --help)
             echo "${CLEAN_HELP_MSG}"
             exit 0
+            ;;
+        cervantes)
+            make TARGET=cervantes clean
             ;;
         kindle)
             make TARGET=kindle clean
@@ -280,6 +312,11 @@ ${SUPPORTED_TARGETS}"
             make TARGET=win32 clean
             ;;
         *)
+            if [ -z "${KODEBUG_NO_DEFAULT}" ]; then # no explicit --debug / --no-debug
+                # builds a debug build by default, like kodev-run
+                export KODEBUG=1
+            fi
+
             make clean
             ;;
     esac
@@ -359,6 +396,10 @@ ${SUPPORTED_RELEASE_TARGETS}"
         sony-prstux)
             kodev-build sony-prstux
             make TARGET=sony-prstux update
+            ;;
+        cervantes)
+            kodev-build cervantes
+            make TARGET=cervantes update
             ;;
         kindle-legacy)
             kodev-build kindle-legacy
@@ -442,7 +483,7 @@ TARGET:
                 export KODEBUG=
                 ;;
             --gdb)
-                if [ ! -z "${VALUE}" ]; then
+                if [ -n "${VALUE}" ]; then
                     gdb=${VALUE}
                 else
                     # Try to use friendly defaults for gdb
@@ -468,7 +509,7 @@ TARGET:
                 graph_memory=1
                 ;;
             --valgrind)
-                if [ ! -z "${VALUE}" ]; then
+                if [ -n "${VALUE}" ]; then
                     valgrind=${VALUE}
                 else
                     # Try to use sensible defaults for valgrind
@@ -485,7 +526,7 @@ TARGET:
                 ;;
             -h | --screen-height)
                 # simple numeric check due to overlap between -h for help and height
-                if [ ! -z "${VALUE##*[!0-9]*}" ]; then
+                if [ -n "${VALUE##*[!0-9]*}" ]; then
                     screen_height=${VALUE}
                 else
                     echo "${RUN_HELP_MSG}"
@@ -581,11 +622,11 @@ TARGET:
 
             KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
-            if [ ! -z "${gdb}" ]; then
+            if [ -n "${gdb}" ]; then
                 KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
             fi
 
-            if [ ! -z "${valgrind}" ]; then
+            if [ -n "${valgrind}" ]; then
                 KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
             fi
 
@@ -665,7 +706,7 @@ OPTIONS:
         test_path="./spec/$1/unit"
         rm -rf "${test_path}"/data/*.sdr
 
-        if [ ! -z "${2}" ]; then
+        if [ -n "${2}" ]; then
             test_path="${test_path}/$2"
         fi
 

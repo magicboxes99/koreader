@@ -24,6 +24,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+local ReaderGesture = require("apps/reader/modules/readergesture")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
@@ -147,6 +148,8 @@ function FileManager:init()
             end
         end,
         close_callback = function() return self:onClose() end,
+        -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
+        return_arrow_propagation = true,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
@@ -271,7 +274,7 @@ function FileManager:init()
                         and #(DocumentRegistry:getProviders(file)) > 1,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        DocumentRegistry:showSetProviderButtons(file, FileManager.instance, self, ReaderUI)
+                        self:showSetProviderButtons(file, FileManager.instance, ReaderUI)
                     end,
                 },
                 {
@@ -355,6 +358,10 @@ function FileManager:init()
         end
     end
 
+    if Device:isTouchDevice() then
+        table.insert(self, ReaderGesture:new{ ui = self })
+    end
+
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
         --Override the menu.lua way of handling the back key
@@ -366,18 +373,25 @@ end
 
 function FileChooser:onBack()
     local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-    if back_to_exit == "always" then
-        return self:onClose()
-    elseif back_to_exit == "disable" then
-        return true
-    elseif back_to_exit == "prompt" then
-            UIManager:show(ConfirmBox:new{
-                text = _("Exit KOReader?"),
-                ok_text = _("Exit"),
-                ok_callback = function()
-                    self:onClose()
-                end
-            })
+    local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager") or "default"
+    if back_in_filemanager == "default" then
+        if back_to_exit == "always" then
+            return self:onClose()
+        elseif back_to_exit == "disable" then
+            return true
+        elseif back_to_exit == "prompt" then
+                UIManager:show(ConfirmBox:new{
+                    text = _("Exit KOReader?"),
+                    ok_text = _("Exit"),
+                    ok_callback = function()
+                        self:onClose()
+                    end
+                })
+
+            return true
+        end
+    elseif back_in_filemanager == "parent_folder" then
+        self:changeToPath(string.format("%s/..", self.path))
         return true
     end
 end
@@ -825,6 +839,7 @@ function FileManager:getStartWithMenuTable()
     local start_withs = {
         filemanager = {_("file browser"), _("Start with file browser")},
         history = {_("history"), _("Start with history")},
+        folder_shortcuts = {_("folder shortcuts"), _("Start with folder shortcuts")},
         last = {_("last file"), _("Start with last file")},
     }
     local set_sw_table = function(start_with)
@@ -849,6 +864,7 @@ function FileManager:getStartWithMenuTable()
         sub_item_table = {
             set_sw_table("filemanager"),
             set_sw_table("history"),
+            set_sw_table("folder_shortcuts"),
             set_sw_table("last"),
         }
     }

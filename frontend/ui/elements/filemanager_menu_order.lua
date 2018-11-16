@@ -36,6 +36,7 @@ local order = {
     device = {
         "time",
         "battery",
+        "gesture",
     },
     network = {
         "network_wifi",
@@ -53,6 +54,7 @@ local order = {
         "statistics",
         "cloud_storage",
         "read_timer",
+        "wallabag",
         "news_downloader",
         "send2ebook",
         "text_editor",
@@ -92,8 +94,7 @@ local order = {
         "----------------------------",
         "system_statistics",
         "----------------------------",
-        "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
-                           Device:isPocketBook() or Device:isAndroid() ]]--
+        "ota_update", -- if Device:hasOTAUpdates()
         "version",
         "help",
         "----------------------------",

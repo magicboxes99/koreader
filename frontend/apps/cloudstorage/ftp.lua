@@ -43,7 +43,7 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
 end
 
 function Ftp:config(item, callback)
-    local text_info = "FTP address must be in the format ftp://example.domian.com\n"..
+    local text_info = "FTP address must be in the format ftp://example.domain.com\n"..
         "Also supported is format with IP e.g: ftp://10.10.10.1\n"..
         "Username and password are optional."
     local hint_name = _("Your FTP name")
@@ -65,7 +65,7 @@ function Ftp:config(item, callback)
         text_address = item.address
         text_username = item.username
         text_password = item.password
-        text_folder = item.folder
+        text_folder = item.url
     else
         title = _("Add FTP account")
     end
@@ -90,6 +90,7 @@ function Ftp:config(item, callback)
             {
                 text = text_password,
                 input_type = "string",
+                text_type = "password",
                 hint = hint_password,
             },
             {

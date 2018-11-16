@@ -172,8 +172,6 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
-
-    self:onSetStatusLine(config:readSetting("copt_status_line") or DCREREADER_PROGRESS_BAR)
 end
 
 -- in scroll mode percent_finished must be save before close document
@@ -476,9 +474,10 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         local doc_y = self.ui.document:getPosFromXPointer(marker_xp)
         local top_y = self.ui.document:getCurrentPos()
         local screen_y = doc_y - top_y
-        local doc_margins = self.ui.document._document:getPageMargins()
+        local doc_margins = self.ui.document:getPageMargins()
+        local header_height = self.ui.document:getHeaderHeight() -- top full status bar (0 when bottom mini bar used)
         if self.view.view_mode == "page" then
-            screen_y = screen_y + doc_margins["top"]
+            screen_y = screen_y + doc_margins["top"] + header_height
         end
         local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
@@ -551,7 +550,7 @@ function ReaderRolling:onGotoViewRel(diff)
 end
 
 function ReaderRolling:onPanning(args, _)
-    --@TODO disable panning in page view_mode?  22.12 2012 (houqp)
+    if self.view.view_mode ~= "scroll" then return end
     local _, dy = unpack(args)
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
     self.xpointer = self.ui.document:getXPointer()
@@ -703,15 +702,25 @@ end
 --[[
 currently we don't need to get page links on each page/pos update
 since we can check link on the fly when tapping on the screen
---]]
 function ReaderRolling:updatePageLink()
     logger.dbg("update page link")
     local links = self.ui.document:getPageLinks()
     self.view.links = links
 end
+--]]
 
-function ReaderRolling:onSetStatusLine(status_line)
+function ReaderRolling:onSetStatusLine(status_line, on_read_settings)
+    -- status_line values:
+    -- in crengine: 0=header enabled, 1=disabled
+    -- in koreader: 0=top status bar, 1=bottom mini bar
+    self.ui.document:setStatusLineProp(status_line)
     self.cre_top_bar_enabled = status_line == 0
+    if not on_read_settings then
+        -- Ignore this event when it is first sent by ReaderCoptListener
+        -- on book loading, so we stay with the saved footer settings
+        self.view.footer:setVisible(status_line == 1)
+    end
+    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderRolling:updateBatteryState()

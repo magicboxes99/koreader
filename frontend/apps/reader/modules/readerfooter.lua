@@ -44,7 +44,7 @@ local footerTextGeneratorMap = {
         if not Device:hasFrontlight() then return "L: NA" end
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
-            if Device:isKobo() then
+            if Device:isCervantes() or Device:isKobo() then
                 return ("L: %d%%"):format(powerd:frontlightIntensity())
             else
                 return ("L: %d"):format(powerd:frontlightIntensity())
@@ -579,7 +579,9 @@ function ReaderFooter:_updateFooterText()
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
-    UIManager:setDirty(self.view.dialog, "ui", self.footer_content.dimen)
+    UIManager:setDirty(self.view.dialog, function()
+        return "ui", self.footer_content.dimen
+    end)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
@@ -692,15 +694,18 @@ function ReaderFooter:onHoldFooter()
     return true
 end
 
-function ReaderFooter:onSetStatusLine(status_line)
-    -- 1 is min progress bar while 0 is full cre header progress bar
-    if status_line == 1 then
+function ReaderFooter:setVisible(visible)
+    if visible then
+        -- If it was off, just do as if we tap'ed on it (so we don't
+        -- duplicate onTapFooter() code - not if flipping_visible as in
+        -- this case, a ges.pos argument to onTapFooter(ges) is required)
+        if self.mode == MODE.off and not self.view.flipping_visible then
+            self:onTapFooter()
+        end
         self.view.footer_visible = (self.mode ~= MODE.off)
     else
         self:applyFooterMode(MODE.off)
     end
-    self.ui.document:setStatusLineProp(status_line)
-    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderFooter:onResume()

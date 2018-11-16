@@ -90,7 +90,7 @@ function NetworkMgr:beforeWifiAction(callback)
  end
 
 function NetworkMgr:isConnected()
-    if Device:isAndroid() then
+    if Device:isAndroid() or Device:isCervantes() then
         return self:isWifiOn()
     else
         -- `-c1` try only once; `-w2` wait 2 seconds
@@ -121,7 +121,7 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
+        enabled_func = function() return Device:isAndroid() or Device:isCervantes() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
             local wifi_status = NetworkMgr:isWifiOn()
