@@ -115,11 +115,16 @@ This will allow you to build the *exact* same TCs used to build the nightlies, t
 
 On Mac OS X you may need to install the following tools using [Homebrew](https://brew.sh/):
 ```
-brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51 gettext pkg-config wget md5sha1sum
+brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
 
 If you run into a gettext error while building glib, try `brew link --force gettext` to override the built-in Mac OS BSD gettext with GNU GetText.
+
+*Note:* in Mojave (10.14) you need to set a minimum deployment version higher than 10.04. Otherwise you'll get the error `ld: library not found for -lgcc_s.10.4`.
+```
+export MACOSX_DEPLOYMENT_TARGET=10.09
+```
 
 The KOReader Android build requires `ant`, `openjdk-8-jdk` and `p7zip-full`. A compatible version of the Android NDK and SDK will be downloaded automatically by `./kodev build android` if no NDK or SDK is provided in environment variables. For that purpose you can use `NDK=/ndk/location SDK=/sdk/location ./kodev build android`.
 
