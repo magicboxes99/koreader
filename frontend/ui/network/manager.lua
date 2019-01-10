@@ -124,7 +124,7 @@ function NetworkMgr:getWifiMenuTable()
         enabled_func = function() return Device:isAndroid() or Device:isCervantes() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
-            local wifi_status = NetworkMgr:isWifiOn()
+            local wifi_status = NetworkMgr:isWifiOn() and NetworkMgr:isConnected()
             local complete_callback = function()
                 -- notify touch menu to update item check state
                 touchmenu_instance:updateItems()
@@ -187,7 +187,7 @@ function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Automatically restore Wi-Fi connection after resume"),
         checked_func = function() return G_reader_settings:nilOrTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:isKobo() end,
+        enabled_func = function() return Device:isKobo() or Device:isCervantes() end,
         callback = function() G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
     }
 end
@@ -273,10 +273,59 @@ function NetworkMgr:showNetworkMenu(complete_callback)
             UIManager:show(InfoMessage:new{text = err})
             return
         end
+        -- NOTE: Fairly hackish workaround for #4387,
+        --       rescan if the first scan appeared to yield an empty list.
+        -- FIXME: This *might* be an issue better handled in lj-wpaclient...
+        if (table.getn(network_list) == 0) then
+            network_list, err = self:getNetworkList()
+            if network_list == nil then
+                UIManager:show(InfoMessage:new{text = err})
+                return
+            end
+        end
         UIManager:show(require("ui/widget/networksetting"):new{
             network_list = network_list,
             connect_callback = complete_callback,
         })
+    end)
+end
+
+function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
+    local info = InfoMessage:new{text = _("Scanning…")}
+    UIManager:show(info)
+    UIManager:nextTick(function()
+        local network_list, err = self:getNetworkList()
+        UIManager:close(info)
+        if network_list == nil then
+            UIManager:show(InfoMessage:new{text = err})
+            return
+        end
+        table.sort(network_list,
+           function(l, r) return l.signal_quality > r.signal_quality end)
+        local success = false
+        table.foreach(network_list,
+           function(idx, network)
+               if network.password then
+                   success = NetworkMgr:authenticateNetwork(network)
+                   if success then
+                       NetworkMgr:obtainIP()
+                       if complete_callback then
+                           complete_callback()
+                       end
+                       UIManager:show(InfoMessage:new{
+                           text = T(_("Connected to network %1"), network.ssid),
+                           timeout = 3,
+                       })
+                       return
+                   end
+               end
+           end)
+        if not success then
+            UIManager:show(require("ui/widget/networksetting"):new{
+                network_list = network_list,
+                connect_callback = complete_callback,
+            })
+        end
     end)
 end
 
