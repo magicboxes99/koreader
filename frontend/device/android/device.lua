@@ -2,18 +2,19 @@ local Generic = require("device/generic/device")
 local _, android = pcall(require, "android")
 local ffi = require("ffi")
 local C = ffi.C
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
 
 local Device = Generic:new{
-    model = "Android",
+    model = android.getProduct(),
     hasKeys = yes,
     hasDPad = no,
     isAndroid = yes,
     hasFrontlight = yes,
-    firmware_rev = "none",
+    firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
     hasColorScreen = yes,
@@ -30,10 +31,17 @@ function Device:init()
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
                 return "SaveState"
-            elseif ev.code == C.APP_CMD_GAINED_FOCUS then
+            elseif ev.code == C.APP_CMD_GAINED_FOCUS
+                or ev.code == C.APP_CMD_INIT_WINDOW
+                or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:refreshFull()
-            elseif ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
-                this.device.screen:refreshFull()
+            elseif ev.code == C.APP_CMD_RESUME then
+                local new_file = android.getIntent()
+                if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
+                    logger.warn("Loading new file from intent: " .. new_file)
+                    local ReaderUI = require("apps/reader/readerui")
+                    ReaderUI:doShowReader(new_file)
+                end
             end
         end,
         hasClipboardText = function()
@@ -60,6 +68,11 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
+    -- check if we enabled support for wakelocks
+    if G_reader_settings:isTrue("enable_android_wakelock") then
+        android.setWakeLock(true)
+    end
+
     Generic.init(self)
 end
 
@@ -75,5 +88,39 @@ function Device:initNetworkManager(NetworkMgr)
         return android.isWifiEnabled()
     end
 end
+
+function Device:exit()
+    android.log_name = 'luajit-launcher'
+    android.LOGI("Finishing luajit launcher main activity");
+    android.lib.ANativeActivity_finish(android.app.activity)
+end
+
+local function getCodename()
+    local api = Device.firmware_rev
+    local codename = nil
+
+    if api > 27 then
+        codename = "Pie"
+    elseif api == 27 or api == 26 then
+        codename = "Oreo"
+    elseif api == 25 or api == 24 then
+        codename = "Nougat"
+    elseif api == 23 then
+        codename = "Marshmallow"
+    elseif api == 22 or api == 21 then
+        codename = "Lollipop"
+    elseif api == 19 then
+        codename = "KitKat"
+    elseif api < 19 and api >= 16 then
+        codename = "Jelly Bean"
+    elseif api < 16 and api >= 14 then
+        codename = "Ice Cream Sandwich"
+    end
+
+    return codename or ""
+end
+
+android.LOGI(string.format("Android %s - %s (API %d)",
+    android.getVersion(), getCodename(), Device.firmware_rev))
 
 return Device

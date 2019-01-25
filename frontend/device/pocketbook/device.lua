@@ -157,6 +157,7 @@ end
 
 -- PocketBook InkPad
 local PocketBook840 = PocketBook:new{
+    model = "PBInkPad",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -166,6 +167,7 @@ local PocketBook840 = PocketBook:new{
 
 -- PocketBook Lux 4
 local PocketBook627 = PocketBook:new{
+    model = "PBLux4",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -173,8 +175,9 @@ local PocketBook627 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
--- PocketBook HD Touch
+-- PocketBook Touch HD
 local PocketBook631 = PocketBook:new{
+    model = "PBTouchHD",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -184,6 +187,7 @@ local PocketBook631 = PocketBook:new{
 
 -- PocketBook Touch HD Plus
 local PocketBook632 = PocketBook:new{
+    model = "PBTouchHDPlus",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -194,6 +198,7 @@ local PocketBook632 = PocketBook:new{
 
 -- PocketBook Lux 3
 local PocketBook626 = PocketBook:new{
+    model = "PBLux3",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -203,6 +208,7 @@ local PocketBook626 = PocketBook:new{
 
 -- PocketBook Basic Touch
 local PocketBook624 = PocketBook:new{
+    model = "PBBasicTouch",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,
@@ -212,6 +218,7 @@ local PocketBook624 = PocketBook:new{
 
 -- PocketBook Basic Touch 2
 local PocketBook625 = PocketBook:new{
+    model = "PBBasicTouch2",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,
@@ -221,6 +228,7 @@ local PocketBook625 = PocketBook:new{
 
 -- PocketBook Touch Lux
 local PocketBook623 = PocketBook:new{
+    model = "PBTouchLux",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -230,6 +238,7 @@ local PocketBook623 = PocketBook:new{
 
 -- PocketBook InkPad 3
 local PocketBook740 = PocketBook:new{
+    model = "PBInkPad3",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -238,8 +247,9 @@ local PocketBook740 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
--- PocketBook HD Touch
+-- PocketBook Sense
 local PocketBook630 = PocketBook:new{
+    model = "PBSense",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -249,6 +259,7 @@ local PocketBook630 = PocketBook:new{
 
 -- PocketBook Aqua 2
 local PocketBook641 = PocketBook:new{
+    model = "PBAqua2",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -258,6 +269,7 @@ local PocketBook641 = PocketBook:new{
 
 -- PocketBook Color Lux
 local PocketBookColorLux = PocketBook:new{
+    model = "PBColorLux",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -271,28 +283,28 @@ logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
 
-if codename == "PocketBook 840" then
-    return PocketBook840
+if codename == "PocketBook 623" then
+    return PocketBook623
+elseif codename == "PocketBook 624" then
+    return PocketBook624
+elseif codename == "PB625" then
+    return PocketBook625
+elseif codename == "PB626" or codename == "PocketBook 626" then
+    return PocketBook626
 elseif codename == "PB627" then
     return PocketBook627
+elseif codename == "PocketBook 630" then
+    return PocketBook630
 elseif codename == "PB631" then
     return PocketBook631
 elseif codename == "PB632" then
     return PocketBook632
 elseif codename == "PB641" then
     return PocketBook641
-elseif codename == "PocketBook 626" then
-    return PocketBook626
-elseif codename == "PocketBook 624" then
-    return PocketBook624
-elseif codename == "PocketBook 623" then
-    return PocketBook623
-elseif codename == "PocketBook 630" then
-    return PocketBook630
-elseif codename == "PB625" then
-    return PocketBook625
 elseif codename == "PB740" then
     return PocketBook740
+elseif codename == "PocketBook 840" then
+    return PocketBook840
 elseif codename == "PocketBook Color Lux" then
     return PocketBookColorLux
 else

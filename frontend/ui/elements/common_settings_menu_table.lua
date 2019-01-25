@@ -123,8 +123,29 @@ if Screen.isColorScreen() then
 else
     common_settings.screen.sub_item_table[2].separator = true
 end
+
 if Device:isAndroid() then
-    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
+    -- android common settings
+    local isAndroid, android = pcall(require, "android")
+    if not isAndroid then return end
+
+    -- keep screen on
+    table.insert(common_settings.screen.sub_item_table,
+        {
+            text = _("Keep screen on"),
+            checked_func = function() return G_reader_settings:isTrue("enable_android_wakelock") end,
+            callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
+        })
+
+    -- fullscreen
+    if Device.firmware_rev <= 16 then
+        table.insert(common_settings.screen.sub_item_table,
+            {
+                text = _("Fullscreen"),
+                checked_func = function() return android.isFullscreen() end,
+                callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
+            })
+    end
 end
 
 if Device:hasKeys() then
@@ -314,6 +335,47 @@ common_settings.document = {
                     end,
                 },
 
+            }
+        },
+        {
+            text = _("Highlight action"),
+            sub_item_table = {
+                {
+                    text = _("Ask with popup dialog"),
+                    checked_func = function()
+                        return G_reader_settings:nilOrFalse("default_highlight_action")
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", nil)
+                    end,
+                },
+                {
+                    text = _("Highlight"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "highlight"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "highlight")
+                    end,
+                },
+                {
+                    text = _("Translate"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "translate"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "translate")
+                    end,
+                },
+                {
+                    text = _("Wikipedia"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "wikipedia"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "wikipedia")
+                    end,
+                },
             }
         },
     },
