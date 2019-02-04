@@ -79,6 +79,14 @@ function OPDSBrowser:init()
              title = "Internet Archive",
              url = "https://bookserver.archive.org/",
           },
+          {
+             title = "Flibusta (Russian)",
+             url = "http://www.flibusta.is/opds",
+          },
+          {
+             title = "textos.info (Spanish)",
+             url = "https://www.textos.info/catalogo.atom",
+          },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
     elseif servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
@@ -376,6 +384,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 if link.type:find(self.catalog_type)
                         and (not link.rel
                              or link.rel == "subsection"
+                             or link.rel == "http://opds-spec.org/subsection"
                              or link.rel == "http://opds-spec.org/sort/popular"
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = build_href(link.href)

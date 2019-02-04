@@ -167,7 +167,8 @@ function ReaderLink:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("swipe_to_jump_to_latest_bookmark",
                         not isSwipeToJumpToLatestBookmarkEnabled())
                 end,
-                help_text = _([[Swipe to the left to go the most recently bookmarked page.
+                help_text = _([[
+Swipe to the left to go the most recently bookmarked page.
 This can be useful to quickly swipe back and forth between what you are reading and some reference page (for example notes, a map or a characters list).
 If any of the other Swipe to follow link options is enabled, this will work only when the current page contains no link.]]),
             },
@@ -199,7 +200,8 @@ If any of the other Swipe to follow link options is enabled, this will work only
                 G_reader_settings:saveSetting("tap_ignore_external_links",
                     not isTapIgnoreExternalLinksEnabled())
             end,
-            help_text = _([[Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
+            help_text = _([[
+Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
             separator = true,
         })
@@ -287,16 +289,7 @@ end
 --- Check if a xpointer to <a> node really points to itself
 function ReaderLink:isXpointerCoherent(a_xpointer)
     -- Get screen coordinates of xpointer
-    local doc_margins = self.ui.document:getPageMargins()
-    local header_height = self.ui.document:getHeaderHeight() -- top full status bar (0 when bottom mini bar used)
-    local doc_y, doc_x = self.ui.document:getPosFromXPointer(a_xpointer)
-    local top_y = self.ui.document:getCurrentPos()
-    -- (strange, but using doc_margins.top is accurate even in scroll mode)
-    local screen_y = doc_y - top_y
-    if self.view.view_mode == "page" then
-        screen_y = screen_y + doc_margins["top"] + header_height
-    end
-    local screen_x = doc_x + doc_margins["left"]
+    local screen_y, screen_x = self.ui.document:getScreenPositionFromXPointer(a_xpointer)
     -- Get again link and a_xpointer from this position
     local re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x, y = screen_y}) -- luacheck: no unused
     -- We should get the same a_xpointer. If not, crengine has messed up
